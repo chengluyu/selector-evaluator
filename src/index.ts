@@ -166,7 +166,7 @@ export function create<T extends object>(operations: Operations<T>): Evaluator<T
     root: T,
     { type, subclasses, pseudoes }: S.CompoundSelector,
   ): boolean {
-    if (type && operations.getTagName(root) !== type.name.toUpperCase()) {
+    if (type && operations.getTagName(root).toUpperCase() !== type.name.toUpperCase()) {
       return false;
     }
     if (subclasses) {
