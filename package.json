@@ -1,4 +1,20 @@
 {
+  "name": "selector-evaluator",
+  "version": "0.0.2",
+  "description": "Evaluate CSS selector on any tree-like structures.",
+  "files": [
+    "lib/*.js",
+    "lib/*.d.ts"
+  ],
+  "author": {
+    "name": "Luyu Cheng",
+    "url": "https://github.com/chengluyu"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chengluyu/selector-evaluator/issues"
+  },
+  "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch"
