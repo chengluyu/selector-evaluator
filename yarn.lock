@@ -1135,10 +1135,10 @@ saxes@^4.0.2:
   dependencies:
     xmlchars "^2.2.0"
 
-selector-parser@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/selector-parser/-/selector-parser-0.0.2.tgz#2e1d525ab0bfafedc439ddf5876b7aff6696760b"
-  integrity sha512-93oEhyuUP0JIh25BGb57aiHPRiNMuTM53twQk3Xmmsr0L3V1Y/6HDBlmMj3CuUQ3bcmYHHruIm7TUc86zwJp8Q==
+selector-parser@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/selector-parser/-/selector-parser-0.0.3.tgz#ef3e0e2c901284869ca44673b95c06a33b59dc39"
+  integrity sha512-W6Jnqrt0sFuIlrxxbedAQlljaJw6l96pouEsfGJ9SNTSkKgCQyZav8d4cxq9rTEtGD39TZjniThenWz7UuPStQ==
 
 semver@^5.5.0:
   version "5.7.1"
