@@ -128,12 +128,10 @@ export function create<T extends object>(operations: Operations<T>): Evaluator<T
     '*=': (value: string, expected: string): boolean => value.includes(expected),
   };
 
-  function* preorderDepthFirstTraverse(node: T, includeRoot = false): IterableIterator<T> {
-    if (includeRoot) {
-      yield node;
-    }
+  function* preorderDepthFirstTraverse(node: T): IterableIterator<T> {
     for (const child of operations.getChildren(node)) {
-      yield* preorderDepthFirstTraverse(child, true);
+      yield child;
+      yield* preorderDepthFirstTraverse(child);
     }
   }
 
