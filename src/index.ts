@@ -4,7 +4,6 @@ export interface Operations<T> {
   getTagName(node: T): string;
   getContent(node: T): string;
   getID(node: T): string;
-  getClassList(node: T): string[];
   hasClass(node: T, className: string): boolean;
   getParent(node: T): T | null;
   getChildren(node: T): Iterable<T>;
@@ -18,14 +17,18 @@ export interface Evaluator<T> {
   querySelectorAll(root: T, selectors: string): T[];
 }
 
-export function create<T>(operations: Operations<T>): Evaluator<T> {
+export function create<T extends object>(operations: Operations<T>): Evaluator<T> {
   const collectors = {
     [S.CombinatorKind.Descendant](nodes: T[]): T[] {
       const ancestors: T[] = [];
+      const deduplicator = new WeakSet();
       for (const node of nodes) {
-        let t: T | null = node;
+        let t: T | null = operations.getParent(node);
         while (t) {
-          ancestors.push(t);
+          if (!deduplicator.has(t)) {
+            ancestors.push(t);
+            deduplicator.add(t);
+          }
           t = operations.getParent(t);
         }
       }
@@ -33,30 +36,42 @@ export function create<T>(operations: Operations<T>): Evaluator<T> {
     },
     [S.CombinatorKind.Child](nodes: T[]): T[] {
       const parents: T[] = [];
+      const deduplicator = new WeakSet();
       for (const node of nodes) {
         const parent = operations.getParent(node);
         if (parent) {
-          parents.push(parent);
+          if (!deduplicator.has(parent)) {
+            parents.push(parent);
+            deduplicator.add(parent);
+          }
         }
       }
       return parents;
     },
     [S.CombinatorKind.NextSibling](nodes: T[]): T[] {
       const siblings: T[] = [];
+      const deduplicator = new WeakSet();
       for (const node of nodes) {
         const sibling = operations.getPreviouSibling(node);
         if (sibling) {
-          siblings.push(sibling);
+          if (!deduplicator.has(sibling)) {
+            siblings.push(sibling);
+            deduplicator.add(sibling);
+          }
         }
       }
       return siblings;
     },
     [S.CombinatorKind.SubsequentSibling](nodes: T[]): T[] {
       const siblings: T[] = [];
+      const deduplicator = new WeakSet();
       for (const node of nodes) {
-        let t: T | null = node;
+        let t: T | null = operations.getPreviouSibling(node);
         while (t) {
-          siblings.push(t);
+          if (!deduplicator.has(t)) {
+            siblings.push(t);
+            deduplicator.add(t);
+          }
           t = operations.getPreviouSibling(t);
         }
       }
@@ -70,7 +85,9 @@ export function create<T>(operations: Operations<T>): Evaluator<T> {
   // See https://drafts.csswg.org/selectors/#attribute-representation
   // TODO: Some matchers can be more efficient.
   const matchers = {
-    // Represents an element with the att attribute whose value is exactly "val".
+    /**
+     * Represents an element with the att attribute whose value is exactly "val".
+     */
     '=': (value: string, expected: string): boolean => value === expected,
     /**
      * Represents an element with the att attribute whose value is a
@@ -134,7 +151,6 @@ export function create<T>(operations: Operations<T>): Evaluator<T> {
         return operations.hasClass(node, selector.value);
       case S.SelectorKind.Attribute:
         const value = operations.getAttribute(node, selector.name);
-        // TODO: the return type of `getAttribute` should be nullable or undefined-able?
         return selector.match === undefined
           ? typeof value === 'string'
           : value !== null && matchers[selector.match.matcher](value, selector.match.value.value);
@@ -148,21 +164,21 @@ export function create<T>(operations: Operations<T>): Evaluator<T> {
 
   function matchCompoundSelector(
     root: T,
-    { type, subClasses, pseudoes }: S.CompoundSelector,
+    { type, subclasses, pseudoes }: S.CompoundSelector,
   ): boolean {
-    if (type && operations.getTagName(root) !== type.value) {
+    if (type && operations.getTagName(root) !== type.name.toUpperCase()) {
       return false;
     }
-    if (subClasses) {
-      for (const selector of subClasses) {
-        if (matchSubClassSelector(root, selector)) {
+    if (subclasses) {
+      for (const selector of subclasses) {
+        if (!matchSubClassSelector(root, selector)) {
           return false;
         }
       }
     }
     if (pseudoes) {
       for (const selector of pseudoes) {
-        if (matchSubClassSelector(root, selector)) {
+        if (!matchSubClassSelector(root, selector)) {
           return false;
         }
       }
@@ -175,11 +191,10 @@ export function create<T>(operations: Operations<T>): Evaluator<T> {
     for (let i = tail.length - 1; i >= 0; i -= 1) {
       const [combinator, selector] = tail[i];
       candidates = candidates.filter(t => matchCompoundSelector(t, selector));
-      if (candidates.length > 0) {
-        candidates = collectors[combinator](candidates);
-      } else {
+      if (candidates.length === 0) {
         return false;
       }
+      candidates = collectors[combinator](candidates);
     }
     candidates = candidates.filter(t => matchCompoundSelector(t, head));
     return candidates.length > 0;
